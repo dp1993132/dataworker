@@ -4,10 +4,10 @@
 Yottachain 项目使用的数据采集工具
 ```
 
-Install
+## Install
 
 ```
-## 安装
+#安装
 go get github.com/yuin/gluamapper
 go get github.com/yuin/gopher-lua
 go get github.com/dp1993132/dataworker
