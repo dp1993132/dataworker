@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/yuin/gluamapper"
@@ -19,12 +21,14 @@ type Script interface {
 	Run()
 	Stdout(io.Writer)
 	Stderr(io.Writer)
+	Path() string
 }
 
 // script 脚本
 type script struct {
 	stdout io.Writer
 	stderr io.Writer
+	path   string
 	*Worker
 }
 
@@ -34,25 +38,59 @@ func (spt *script) Stdout(w io.Writer) {
 func (spt *script) Stderr(w io.Writer) {
 	spt.stderr = w
 }
+func (spt *script) Path() string {
+	return spt.path
+}
 
 // LoadLua 加载脚本
 func LoadLua(filename string) Script {
+	fmt.Println("加载脚本", filename)
 	var spt script
 	spt.Stdout(bytes.NewBuffer([]byte{}))
 	spt.Stderr(bytes.NewBuffer([]byte{}))
+	spt.path = filename
 	wk := NewWorker()
 	L := lua.NewState()
+	// 加载脚本函数
 	L.SetGlobal("load", L.NewFunction(func(l *lua.LState) int {
-		s := LoadLua(l.Get(1).String())
+		filename := l.Get(1).String()
+		if path.IsAbs(filename) == false {
+			arr := strings.Split(spt.Path(), "/")
+			pre := 1
+			if strings.HasPrefix(filename, "./") {
+				filename = strings.Replace(filename, "./", "", 1)
+			}
+			if strings.HasPrefix(filename, "../") {
+				for {
+					if strings.HasPrefix(filename, "../") == false {
+						break
+					}
+					filename = strings.Replace(filename, "../", "", 1)
+					pre++
+				}
+			}
+			if pre > len(arr) {
+				l.Push(lua.LString("脚本路径错误:" + filename))
+				spt.stderr.Write([]byte("脚本路径错误:" + filename))
+				return 1
+			}
+			arr = arr[0 : len(arr)-pre]
+			arr = append(arr, filename)
+			filename = path.Join(arr...)
+			filename = "/" + filename
+		}
+		s := LoadLua(filename)
 		s.Stdout(os.Stdout)
 		s.Stderr(os.Stderr)
 		go s.Run()
 		return 0
 	}))
+	// 打印函数
 	L.SetGlobal("print", L.NewFunction(func(l *lua.LState) int {
 		spt.stdout.Write([]byte(l.Get(1).String() + "\n"))
 		return 0
 	}))
+	// 添加请求函数
 	L.SetGlobal("addRequest", L.NewFunction(func(l *lua.LState) int {
 		request := new(config.Request)
 		v := l.Get(1)
@@ -60,6 +98,7 @@ func LoadLua(filename string) Script {
 		wk.AddRequest(request)
 		return 0
 	}))
+	// 设置请求间隔函数
 	L.SetGlobal("setInterval", L.NewFunction(func(l *lua.LState) int {
 		v := l.Get(1)
 		iv, err := strconv.ParseInt(v.String(), 10, 32)
@@ -69,6 +108,7 @@ func LoadLua(filename string) Script {
 		wk.SetInterval(time.Duration(iv) * time.Second)
 		return 0
 	}))
+	// 发送http数据函数
 	L.SetGlobal("send", L.NewFunction(func(l *lua.LState) int {
 		url := l.Get(1).String()
 		body := l.Get(2).String()
@@ -82,6 +122,7 @@ func LoadLua(filename string) Script {
 		}
 		return 0
 	}))
+	// 执行脚本
 	err := L.DoFile(filename)
 	if err != nil {
 		spt.stderr.Write([]byte(err.Error()))
