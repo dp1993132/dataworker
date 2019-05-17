@@ -1,10 +1,11 @@
 package core
 
 import (
-	"dataworker/worker"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/dp1993132/dataworker/worker"
 )
 
 // Exec 开始执行
@@ -22,10 +23,11 @@ func Exec() {
 		} else {
 			for _, v := range dir {
 				if strings.HasSuffix(v.Name(), ".lua") {
+					if strings.HasSuffix(path, "/") == false {
+						path = path + "/"
+					}
 					filename := path + v.Name()
 					spt := worker.LoadLua(filename)
-					spt.Stdout(os.Stdout)
-					spt.Stderr(os.Stderr)
 					scripts = append(scripts, spt)
 				}
 			}

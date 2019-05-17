@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dataworker/core"
+	"github.com/dp1993132/dataworker/core"
 )
 
 func main() {

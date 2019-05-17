@@ -2,7 +2,6 @@ package worker
 
 import (
 	"bytes"
-	"dataworker/config"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dp1993132/dataworker/config"
 
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
@@ -44,10 +45,9 @@ func (spt *script) Path() string {
 
 // LoadLua 加载脚本
 func LoadLua(filename string) Script {
-	fmt.Println("加载脚本", filename)
 	var spt script
-	spt.Stdout(bytes.NewBuffer([]byte{}))
-	spt.Stderr(bytes.NewBuffer([]byte{}))
+	spt.Stdout(os.Stdout)
+	spt.Stderr(os.Stderr)
 	spt.path = filename
 	wk := NewWorker()
 	L := lua.NewState()

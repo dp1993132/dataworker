@@ -2,7 +2,7 @@ package worker
 
 import (
 	"bytes"
-	"dataworker/config"
+	"github.com/dp1993132/dataworker/config"
 	"fmt"
 	"io"
 	"io/ioutil"
