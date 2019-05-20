@@ -1,4 +1,4 @@
-package mod
+package jsonmode
 
 import (
 	"strings"
@@ -411,8 +411,8 @@ return json
 
 `
 
-// GetMod 获取模块
-func GetMod(l *lua.LState) int {
+// Load 获取模块
+func Load(l *lua.LState) int {
 	ast, err := parse.Parse(strings.NewReader(jsonModSource), "json")
 	if err != nil {
 		l.Push(lua.LString("mod parse error:json"))

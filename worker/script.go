@@ -11,8 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dp1993132/dataworker/mod"
-
+	"github.com/dp1993132/dataworker/mod/json"
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -52,7 +51,7 @@ func LoadLua(filename string) Script {
 	wk := NewWorker()
 	L := lua.NewState()
 	// 预加载模块
-	L.PreloadModule("json", mod.GetMod)
+	L.PreloadModule("json", jsonmode.Load)
 	// 加载脚本函数
 	L.SetGlobal("load", L.NewFunction(func(l *lua.LState) int {
 		filename := l.Get(1).String()
