@@ -1,18 +1,20 @@
 -- 请求列表
 requestList = {
     {
-        url="http://127.0.0.1:9002/api/v0/node/id",
-        method="GET"
-    },
-    {
-        url="http://152.136.18.176:9002/api/v0/node/id",
-        method="GET"
-    }, 
+        url="http://152.136.11.202:8888/v1/chain/get_table_rows",
+        method="POST",
+        body=[[{
+            "code":"hddpool12345",
+            "scope":"hddpool12345",
+            "table":"gusercount",
+            "json":true
+        }]]
+    }
 }
 -- 设置执行间隔
-setInterval(3)
+setInterval(60 * 60 * 24)
 -- 循环添加请求
-for k,v in ipairs(requestList) 
+for k,v in ipairs(requestList)
 do
     addRequest(v)
 end
