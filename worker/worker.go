@@ -1,10 +1,7 @@
 package worker
 
 import (
-	"bytes"
-	"github.com/dp1993132/dataworker/config"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -12,11 +9,18 @@ import (
 	"time"
 )
 
+// Request 请求
+type Request struct {
+	Method string
+	URL    string
+	Body   string
+}
+
 // Worker .
 type Worker struct {
 	sync.Mutex
 	Client         *http.Client
-	requestList    []*http.Request
+	requestList    []*Request
 	responseC      chan *http.Response
 	errors         chan error
 	datas          []string
@@ -36,51 +40,32 @@ func NewWorker() *Worker {
 	return wk
 }
 
-// CreateRequest 创建请求队列
-func (wk *Worker) CreateRequest(method string, urls []string, body io.Reader) error {
-	reqs := make([]*http.Request, len(urls))
-	for k, v := range urls {
-		req, err := http.NewRequest(method, v, body)
-		if err != nil {
-			return err
-		}
-		reqs[k] = req
-	}
-	wk.requestList = reqs
-	return nil
-}
-
 // SetInterval 设置时间间隔
 func (wk *Worker) SetInterval(t time.Duration) {
 	wk.interval = t
 }
 
 // AddRequest 添加请求
-func (wk *Worker) AddRequest(req *config.Request) error {
-	if wk.requestList == nil {
-		wk.requestList = make([]*http.Request, 0)
-	}
-	r, err := http.NewRequest(req.Method, req.URL, bytes.NewBuffer([]byte(req.Body)))
-	if err != nil {
-		return err
-	} else {
-		wk.requestList = append(wk.requestList, r)
-	}
+func (wk *Worker) AddRequest(req *Request) error {
+	wk.requestList = append(wk.requestList, req)
 	return nil
 }
 
 // SetRequestList 添加任务
-func (wk *Worker) SetRequestList(requestList ...*http.Request) {
+func (wk *Worker) SetRequestList(requestList ...*Request) {
 	wk.requestList = requestList
 }
 
 // Do 运行
 func (wk *Worker) Do() {
 	wk.undo = len(wk.requestList)
-	wk.datas = nil
 	for _, request := range wk.requestList {
-		go func(req *http.Request) {
-			resp, err := wk.Client.Do(req)
+		go func(req *Request) {
+			httpreq, err := http.NewRequest(req.Method, req.URL, strings.NewReader(req.Body))
+			if err != nil {
+				wk.errors <- err
+			}
+			resp, err := wk.Client.Do(httpreq)
 			if err != nil {
 				wk.errors <- err
 			} else {
@@ -95,8 +80,8 @@ func (wk *Worker) done() {
 	defer wk.Unlock()
 	wk.undo--
 	if wk.undo <= 0 && wk.allDoneHandler != nil {
-
 		wk.allDoneHandler("[" + strings.Join(wk.datas, ",") + "]")
+		wk.datas = make([]string, 0)
 	}
 }
 
@@ -104,8 +89,8 @@ func (wk *Worker) done() {
 func (wk *Worker) OnError(handler func(err error)) {
 	for {
 		err := <-wk.errors
-		wk.done()
 		handler(err)
+		wk.done()
 	}
 }
 
@@ -118,11 +103,11 @@ func (wk *Worker) OnSuccess(handler func(res string)) {
 			wk.errors <- err
 		} else if resp.StatusCode == 200 {
 			wk.datas = append(wk.datas, string(data))
+			handler(string(data))
+			wk.done()
 		} else {
 			wk.errors <- fmt.Errorf("request error: %d", resp.StatusCode)
 		}
-		handler(string(data))
-		wk.done()
 		resp.Body.Close()
 	}
 }

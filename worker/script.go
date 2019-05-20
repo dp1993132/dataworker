@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dp1993132/dataworker/config"
-
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -90,9 +88,14 @@ func LoadLua(filename string) Script {
 		spt.stdout.Write([]byte(l.Get(1).String() + "\n"))
 		return 0
 	}))
+	// 打印错误函数
+	L.SetGlobal("perror", L.NewFunction(func(l *lua.LState) int {
+		spt.stdout.Write([]byte(fmt.Sprintf("%c[0;0;31m%s%c[0m\n", 0x1B, l.Get(1).String(), 0x1B)))
+		return 0
+	}))
 	// 添加请求函数
 	L.SetGlobal("addRequest", L.NewFunction(func(l *lua.LState) int {
-		request := new(config.Request)
+		request := new(Request)
 		v := l.Get(1)
 		gluamapper.Map(v.(*lua.LTable), request)
 		wk.AddRequest(request)
