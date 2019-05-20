@@ -11,8 +11,8 @@ requestList = {
         }]]
     }
 }
--- 设置执行间隔
-setInterval(60 * 60 * 24)
+-- 设置执行间隔 单位为秒
+setInterval(60 * 60)
 -- 循环添加请求
 for k,v in ipairs(requestList)
 do
