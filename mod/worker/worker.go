@@ -1,1 +1,1 @@
-package workermod
+package worker
