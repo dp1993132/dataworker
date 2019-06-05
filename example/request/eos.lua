@@ -14,22 +14,22 @@ requestList = {
             "json":true
         }]]
     },
-    -- 获取持币用户数
-    {
-        url="http://152.136.11.202:8888/v1/chain/get_table_rows",
-        method="POST",
-        body=[[{
-            "code":"eosio",
-            "scope":"eosio",
-            "table":"gcount",
-            "json":true
-        }]]
-    },  
-    -- 测试调用本地接口
-    {
-        url="http://127.0.0.1:9002/api/v0/node/id",
-        method="GET",
-    }  
+    -- -- 获取持币用户数
+    -- {
+    --     url="http://152.136.11.202:8888/v1/chain/get_table_rows",
+    --     method="POST",
+    --     body=[[{
+    --         "code":"eosio",
+    --         "scope":"eosio",
+    --         "table":"gcount",
+    --         "json":true
+    --     }]]
+    -- },  
+    -- -- 测试调用本地接口
+    -- {
+    --     url="http://127.0.0.1:9002/api/v0/node/id",
+    --     method="GET",
+    -- }  
 }
 -- 设置执行间隔 单位为秒 60*60为1小时
 setInterval(6)
@@ -58,9 +58,4 @@ function onAllDone(res)
     -- if err ~= nil then
     --     print(err)
     -- end 
-    
-
-    -- json解码示例
-    resj = json.decode(res)
-    print(resj[1]["id"])
 end
